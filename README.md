@@ -1,4 +1,4 @@
-Oempro Plugin Development Framework
+Oempro Plugin Framework
 =======================
 
 This plugin is a framework for plugin developers to help them get started much easier and faster.
