@@ -8,7 +8,7 @@ This plugin includes example user interface controllers, views and models. It wo
 
 ## Getting started
 
-## Basic Model-View-Controller (MVC) in Oempro plugins
+## Basic MVC approach in Oempro plugins
 
 ## Controllers
 
