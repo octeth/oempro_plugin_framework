@@ -1,34 +1,12 @@
 # Oempro Plugin Framework
 
-This plugin is a framework for plugin developers to help them get started much easier and faster.
+This is a boilerplate and framework plugin for Oempro plugin developers. With the help of this plugin, you can start building your very own plugin as quickly as possible.
 
-This plugin includes example user interface controllers, views and models. It works similar to all other MVC frameworks.
+Detailed Oempro plugin development manual can be found at:
+<br>http://octeth.com/help/plugin-development/
 
-## Plugin directory structure
+For any questions or comments, please don't hesitate to contact us at:
+<br>hello@octeth.com
 
-## Getting started
-
-## Basic MVC approach in Oempro plugins
-
-## Controllers
-
-## Views
-
-## Models
-
-## Libraries
-
-## Multi-language support
-
-## Plugin hooks: Actions and Filters
-
-## Ready to use functions and classes inside your plugin
-
-## Plugin source code encryption
-
-## Plugin licensing
-
-## Making your plugin ready for Oempro Plugin Store
-
-## Help us for a better plugin development framework
-
+Come and join our Oempro plugin developers community:
+<br>https://www.facebook.com/groups/oempro.plugin.developers/
