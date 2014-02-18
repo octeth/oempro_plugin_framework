@@ -33,6 +33,16 @@
 						<?php print(form_error('example1', '<div class="form-row-note error"><p>', '</p></div>')); ?>
 					</div>
 
+					<?php if (is_bool($ExampleRecords) == true && $ExampleRecords == false): ?>
+						<p>Empty...</p>
+					<?php else: ?>
+						<p><strong>Example record results:</strong></p>
+						<ul>
+						<?php foreach ($ExampleRecords as $Index=>$EachRecord): ?>
+							<li><?php print($EachRecord->EmailAddress); ?></li>
+						<?php endforeach; ?>
+						</ul>
+					<?php endif; ?>
 
 
 					<input type="hidden" name="Command" value="UpdateSettings" id="Command" />

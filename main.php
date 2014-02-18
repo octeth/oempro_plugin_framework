@@ -42,7 +42,7 @@ class plugin_framework extends Plugins
 
 	// Does your plugin require models? Set them here as array.
 	// Example: array('model1', 'model2', 'model3')
-	private static $LoadedModels = array();
+	private static $LoadedModels = array('example');
 
 
 	// -------------------------------------
@@ -386,6 +386,8 @@ class plugin_framework extends Plugins
 		$PageErrorMessage = '';
 		$PageSuccessMessage = '';
 
+		$ExampleRecords = self::$Models->example->ExampleGetRecords();
+
 		$ArrayViewData = array(
 			'PageTitle' => ApplicationHeader::$ArrayLanguageStrings['PageTitle']['AdminPrefix'] . self::$ArrayLanguage['Screen']['0002'],
 			'CurrentMenuItem' => 'Settings',
@@ -394,6 +396,7 @@ class plugin_framework extends Plugins
 			'PluginLanguage' => self::$ArrayLanguage,
 			'PageErrorMessage' => $PageErrorMessage,
 			'PageSuccessMessage' => $PageSuccessMessage,
+			'ExampleRecords' => $ExampleRecords
 		);
 		$ArrayViewData = array_merge($ArrayViewData, InterfaceDefaultValues());
 
