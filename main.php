@@ -51,8 +51,8 @@ class plugin_framework extends Plugins
 
 	public function __construct()
 	{
-		// Do not use the constructor for any process. It will not work
-		// Instead, use enable, disable and load plugin functions
+		// Do not use the constructor for any purpose. It will not work
+		// Instead, use "enable", "disable" and "load" plugin functions
 	}
 
 	// This method is executed when the administrator clicks "Enable" link
@@ -76,6 +76,8 @@ class plugin_framework extends Plugins
 	// next to this plugin in Plugin management of the Oempro admin area
 	public function disable_plugin_framework()
 	{
+		// You can remove plugin database tables, remove plugin options
+		// or perform anything related to uninstalling your plugin here
 	}
 
 	// This method is executed whenever an Oempro page (admin, user or any other pages)
@@ -90,20 +92,26 @@ class plugin_framework extends Plugins
 		// 		 call will let you to sell your plugins on Octeth Plugin Store
 		//		 and avoid piracy
 
-		// Register enable and disable hooks
+		// Register enable and disable hooks. Do NOT change these two lines.
 		parent::RegisterEnableHook(self::$PluginCode);
 		parent::RegisterDisableHook(self::$PluginCode);
 
 		// Setup menu items
+		// "set_menu_items" method will be executed inside your plugin class
+		// to register menu items. Simply check "set_menu_items" method to learn
+		// how you should setup your menu items on the user interface.
 		parent::RegisterMenuHook(self::$PluginCode, 'set_menu_items');
 
 		// Hook registration. To learn more about available hook listeners
-		// visit the plugin development manual
-		parent::RegisterHook('Action', 'FormItem.AddTo.Admin.UserGroupLimitsForm', self::$PluginCode, 'hook_call_1', 10, 1);
-		parent::RegisterHook('Filter', 'UserGroup.Update.FieldValidator', self::$PluginCode, 'hook_call_2', 10, 1);
+		// visit the plugin development manual. Below, we registered one
+		// hook as an example.
+		parent::RegisterHook('Filter', 'UserGroup.Update.FieldValidator', self::$PluginCode, 'hook_call_1', 10, 1);
 
 		// Retrieve language setting. This setting will be used to set
-		// the language of the plugin
+		// the language of the plugin. First we will try to retrieve the
+		// saved language preference from "options" table. If it doesn't exist,
+		// we will set the default "en" (English) language. If it exists, we will
+		// set the saved one in the options table.
 		$Language = Database::$Interface->GetOption(self::$PluginCode.'_Language');
 		if (count($Language) == 0)
 		{
@@ -116,6 +124,8 @@ class plugin_framework extends Plugins
 		}
 
 		// Load the language file
+		// The selected language will be loaded here. If the language file doesn't exist,
+		// plugin will load the default "en" language pack.
 		$ArrayPlugInLanguageStrings = array();
 		if (file_exists(PLUGIN_PATH . self::$PluginCode.'/languages/' . strtolower($Language) . '/' . strtolower($Language) . '.inc.php') == true)
 		{
@@ -130,14 +140,25 @@ class plugin_framework extends Plugins
 		unset($ArrayPlugInLanguageStrings);
 
 		// This private method will load models
+		// The following line will load models defined in self::$LoadedModules array property.
+		// All database processes should be done in model files to keep your plugin code
+		// structure organized. (basic MVC approach)
 		self::_LoadModels();
 
-		// Do you need to load any third party classes, helpers, libraries? Load them here:
-		// include_once('abc.php');
-		// include_once('222.php');
-		// include_once('333.php');
+		// Do you need to load any third party classes, helpers, libraries? Load them here.
+		// There's no standards/restrictions on loading third party classes, libraries or helpers.
+		// They're standard PHP functions, classes or code blocks such as Mailgun wrapper, phpmailer
+		// class, etc. The most important thing is, don't forget to set the path absolute from the root
+		// To help you, we have a constant: PLUGIN_PATH . self::$PluginCode . Take a look at examples
+		// listed below.
+		// include_once(PLUGIN_PATH . self::$PluginCode . '/libraries/111.php');
+		// include_once(PLUGIN_PATH . self::$PluginCode . '/libraries/222.php');
+		// include_once(PLUGIN_PATH . self::$PluginCode . '/libraries/333.php');
 
-		// Define constants if needed
+		// Define constants if needed. Constants to use in your classes or plugin class? You can set
+		// them here, just to keep the code organized. Or you can set them anywhere in your code. Just
+		// be sure that they are prefixed with the self::$PluginCode to avoid conflicts with the main
+		// Oempro or other plugin constants.
 		// define(strtoupper(self::$PluginCode).'_SESSION_THRESHOLD', 5);
 	}
 
@@ -151,6 +172,10 @@ class plugin_framework extends Plugins
 	// please refer to our plugin development manual
 	public function set_menu_items()
 	{
+		// On the Oempro user interface, you can insert content to specific areas. The list of
+		// these specific areas can be found in our plugin development manual. This is the correct
+		// method to set which menu item to show where. Below, you an find some examples.
+
 		$ArrayMenuItems = array();
 		$ArrayMenuItems[] = array(
 			'MenuLocation' => 'Admin.Settings',
@@ -191,33 +216,114 @@ class plugin_framework extends Plugins
 		return;
 	}
 
-	public function hook_call_2()
-	{
-		// If this hook requires an authorization to admin or user areas,
-		// un-comment the right line. Otherwise, this hook will be triggered
-		// for admin, user or unauthorized people whenever the hook listener is
-		// triggered.
-		// if (self::_PluginAppHeader('Admin') == false) return;
-		// if (self::_PluginAppHeader('User') == false) return;
-
-		// ...
-		// your code here
-		// check plugin development manual for more information about hooks
-		// ...
-
-		return;
-	}
-
 
 	// -------------------------------------
 	// Controllers (user interface methods)
 	// -------------------------------------
+
+	// Controllers are executed through the user interface or internally. One thing that
+	// you should be careful is, controller method names should be prefixed with "ui_".
+	// Below, you can find an example. This controller will be called from the admin
+	// settings left side menu item which is inserted inside "set_menu_items" method above.
+	// Here's an example URL for the example below:
+	// http://mydomain.com/oempro/app/index.php?/plugin_framework/menu_item_1/
+	// In the above example URL, "plugin_framework" will tell Oempro to look inside this plugin
+	// and "menu_item_1" is the name of the controller method which is prefixed with "ui_":
+	//
+	// Controller methods can take parameters inside in two ways. As a "GET" parameter or part
+	// or the URL query string. Here's an example:
+	// http://mydomain.com/oempro/app/index.php?/plugin_framework/menu_item_1/val1/val2
+	//
+	// We recommend you to categorize controllers for admin, user and other purposes with "admin",
+	// "user" and "other" prefixes. Here's an example:
+	// ui_admin_settings -> A controller which will be executed in the admin area
+	// ui_user_settings -> A controller which will be executed in the user area
+	// ui_run -> A controller which can be executed any where
+
+	public function ui_menu_item_1($Val1 = '', $Val2 = '')
+	{
+		// The first thing that you should do inside your controller method should be checking
+		// the authorization of the logged in user. If you want this controller to be accessed
+		// by logged in "users" only, enable this code:
+		// if (self::_PluginAppHeader('User') == false) return;
+
+		// Or if you want this controller to be accessible by a logged in administrator, enable
+		// this code:
+		// if (self::_PluginAppHeader('Admin') == false) return;
+
+		// Or if you don't want any admin/user authentication check, simply enable the following
+		// code:
+		if (self::_PluginAppHeader(null) == false) return;
+
+
+		// You can reach CodeIgniter's all features just like the example displayed below:
+		// NOTE: self::$ObjectCI is initiated in self::_PluginAppHeader method. Therefore,
+		// you need to run one of these calls above first.
+		self::$ObjectCI->load->helper('url');
+
+		// These are two commonly used variables inside a method to display a success or error
+		// message on the user interface. They are set here:
+		$PageErrorMessage = '';
+		$PageSuccessMessage = '';
+
+		// ...
+		// your code here
+		// ...
+
+		// Events
+		// Let's say you have a form on the page that this controller displays to the user.
+		// And you want to perform a specific process when the form is submitted. This is
+		// called "event" in Oempro. You need to set event callers before loading the view.
+		// In this way, you can process the requested operation, get results and if any error
+		// (or success) exists, you can display a message to the user. Event methods are prefixed
+		// with "_Event" to make them noticeable.
+		$EventResult = self::_EventSaveSettings();
+		if (is_array($EventResult) == true)
+		{
+			if ($EventResult[0] == false)
+			{
+				$PageErrorMessage = $EventResult[1];
+			}
+			else
+			{
+				$PageSuccessMessage = $EventResult[1];
+			}
+		}
+
+		// Load and display the view to the user. First, we set the information which will be transferred
+		// to the view file for processing:
+		$ArrayViewData = array(
+			// This is the page title. You should set this.
+			'PageTitle' => ApplicationHeader::$ArrayLanguageStrings['PageTitle']['AdminPrefix'] . self::$ArrayLanguage['Screen']['0002'],
+
+			// This is the plugin language file
+			'PluginLanguage' => self::$ArrayLanguage,
+
+			// Page error and success messages
+			'PageErrorMessage' => $PageErrorMessage,
+			'PageSuccessMessage' => $PageSuccessMessage,
+
+			// Below, you can set unlimited amount of info to pass
+			'MyValue' => 'example value'
+		);
+		// In order to include Oempro's default variables, don't forget to merge them below:
+		$ArrayViewData = array_merge($ArrayViewData, InterfaceDefaultValues());
+
+		// Load the view file
+		self::$ObjectCI->plugin_render(self::$PluginCode, 'example_view', $ArrayViewData, true);
+
+
+	}
 
 
 	// -------------------------------------
 	// Events (events of the user interface such as save, create, delete, etc.)
 	// -------------------------------------
 
+	private function _EventSaveSettings()
+	{
+		return;
+	}
 
 	// -------------------------------------
 	// Private methods

@@ -8,7 +8,7 @@ $ArrayPlugInLanguageStrings									= array();
 // Important: Do not change this line! - End
 
 $ArrayPlugInLanguageStrings['Screen']['0001']	= 'Plugin Framework';
-$ArrayPlugInLanguageStrings['Screen']['0002']	= '';
+$ArrayPlugInLanguageStrings['Screen']['0002']	= 'Settings';
 $ArrayPlugInLanguageStrings['Screen']['0003']	= '';
 $ArrayPlugInLanguageStrings['Screen']['0004']	= '';
 $ArrayPlugInLanguageStrings['Screen']['0005']	= '';
