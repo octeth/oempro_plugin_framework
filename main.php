@@ -38,7 +38,7 @@ class plugin_framework extends Plugins
 
 	// This is the version of the plugin. It should be in x.x.x format.
 	// Example: 1.0.5
-	private static $PluginVersion = "1.0.1";
+	private static $PluginVersion = "1.0.0";
 
 	// Does your plugin require models? Set them here as array.
 	// Example: array('model1', 'model2', 'model3')
@@ -105,17 +105,22 @@ class plugin_framework extends Plugins
 		// Hook registration. To learn more about available hook listeners
 		// visit the plugin development manual. Below, we registered one
 		// hook as an example.
-		parent::RegisterHook('Filter', 'UserGroup.Update.FieldValidator', self::$PluginCode, 'hook_call_1', 10, 1);
+		parent::RegisterHook('Action', 'FormItem.AddTo.Admin.UserGroupLimitsForm', self::$PluginCode, 'set_user_group_form_items', 10, 1);
+		parent::RegisterHook('Filter', 'UserGroup.Update.FieldValidator', self::$PluginCode, 'usergroup_update_fieldvalidator', 10, 1);
+		parent::RegisterHook('Action', 'UserGroup.Update.Post', self::$PluginCode, 'usergroup_update', 10, 2);
+		parent::RegisterHook('Action', 'UserGroup.Create.Post', self::$PluginCode, 'usergroup_update', 10, 2);
+		parent::RegisterHook('Action', 'UserGroup.Delete.Post', self::$PluginCode, 'usergroup_delete', 10, 1);
+		parent::RegisterHook('Action', 'User.Delete.Post', self::$PluginCode, 'user_delete', 10, 1000);
 
 		// Retrieve language setting. This setting will be used to set
 		// the language of the plugin. First we will try to retrieve the
 		// saved language preference from "options" table. If it doesn't exist,
 		// we will set the default "en" (English) language. If it exists, we will
 		// set the saved one in the options table.
-		$Language = Database::$Interface->GetOption(self::$PluginCode.'_Language');
+		$Language = Database::$Interface->GetOption(self::$PluginCode . '_Language');
 		if (count($Language) == 0)
 		{
-			Database::$Interface->SaveOption(self::$PluginCode.'_Language', 'en');
+			Database::$Interface->SaveOption(self::$PluginCode . '_Language', 'en');
 			$Language = 'en';
 		}
 		else
@@ -127,13 +132,13 @@ class plugin_framework extends Plugins
 		// The selected language will be loaded here. If the language file doesn't exist,
 		// plugin will load the default "en" language pack.
 		$ArrayPlugInLanguageStrings = array();
-		if (file_exists(PLUGIN_PATH . self::$PluginCode.'/languages/' . strtolower($Language) . '/' . strtolower($Language) . '.inc.php') == true)
+		if (file_exists(PLUGIN_PATH . self::$PluginCode . '/languages/' . strtolower($Language) . '/' . strtolower($Language) . '.inc.php') == true)
 		{
-			include_once(PLUGIN_PATH . self::$PluginCode.'/languages/' . strtolower($Language) . '/' . strtolower($Language) . '.inc.php');
+			include_once(PLUGIN_PATH . self::$PluginCode . '/languages/' . strtolower($Language) . '/' . strtolower($Language) . '.inc.php');
 		}
 		else
 		{
-			include_once(PLUGIN_PATH . self::$PluginCode.'/languages/en/en.inc.php');
+			include_once(PLUGIN_PATH . self::$PluginCode . '/languages/en/en.inc.php');
 		}
 		self::$ArrayLanguage = $ArrayPlugInLanguageStrings;
 
@@ -179,27 +184,27 @@ class plugin_framework extends Plugins
 		$ArrayMenuItems = array();
 		$ArrayMenuItems[] = array(
 			'MenuLocation' => 'Admin.Settings',
-			'MenuID' => 'Menu Item #1',
-			'MenuLink' => Core::InterfaceAppURL() . '/'.self::$PluginCode.'/menu_item_1/',
+			'MenuID' => 'Plugin Framework',
+			'MenuLink' => Core::InterfaceAppURL() . '/' . self::$PluginCode . '/admin_settings/',
 			'MenuTitle' => self::$ArrayLanguage['Screen']['0001'],
 		);
 		$ArrayMenuItems[] = array(
 			'MenuLocation' => 'Admin.TopDropMenu',
-			'MenuID' => 'Menu Item #2',
-			'MenuLink' => Core::InterfaceAppURL() . '/'.self::$PluginCode.'/menu_item_2/',
+			'MenuID' => 'Plugin Framework',
+			'MenuLink' => Core::InterfaceAppURL() . '/' . self::$PluginCode . '/admin_reports/',
 			'MenuTitle' => self::$ArrayLanguage['Screen']['0001'],
 		);
 		$ArrayMenuItems[] = array(
 			'MenuLocation' => 'User.TopMenu',
-			'MenuID' => 'Menu Item #3',
-			'MenuLink' => Core::InterfaceAppURL() . '/'.self::$PluginCode.'/menu_item_3/',
+			'MenuID' => 'Plugin Framework',
+			'MenuLink' => Core::InterfaceAppURL() . '/' . self::$PluginCode . '/email_automation/',
 			'MenuTitle' => self::$ArrayLanguage['Screen']['0001'],
 		);
 
 		return array($ArrayMenuItems);
 	}
 
-	public function hook_call_1()
+	public function set_user_group_form_items($UserGroup)
 	{
 		// If this hook requires an authorization to admin or user areas,
 		// un-comment the right line. Otherwise, this hook will be triggered
@@ -207,13 +212,72 @@ class plugin_framework extends Plugins
 		// triggered.
 		// if (self::_PluginAppHeader('Admin') == false) return;
 		// if (self::_PluginAppHeader('User') == false) return;
+		// if (self::_PluginAppHeader(null) == false) return;
 
-		// ...
-		// your code here
-		// check plugin development manual for more information about hooks
-		// ...
+		if (self::_PluginAppHeader('Admin') == false) return;
 
-		return;
+		$UserGroupSettings = Database::$Interface->GetOption('PluginFramework_UserGroupSettings');
+		$UserGroupSettings = json_decode($UserGroupSettings[0]['OptionValue'], true);
+
+		$ArrayViewData = array(
+			'PluginLanguage' => self::$ArrayLanguage,
+			'UserGroup' => $UserGroup,
+			'UserGroupSettings' => (isset($UserGroupSettings[$UserGroup['UserGroupID']]) == true ? $UserGroupSettings[$UserGroup['UserGroupID']] : false)
+		);
+		$ArrayViewData = array_merge($ArrayViewData, InterfaceDefaultValues());
+
+		$HTML = self::$ObjectCI->plugin_render(self::$PluginCode, 'inline_usergroup_formitems', $ArrayViewData, true, true);
+
+		return array($HTML);
+	}
+
+	public function usergroup_update_fieldvalidator($ArrayFormRules)
+	{
+		$ArrayFormRules[] = array(
+			'field' => 'PluginFramework[DeliveryLimit]',
+			'label' => self::$ArrayLanguage['Screen']['0003'],
+			'rules' => 'required|numeric',
+		);
+		return array($ArrayFormRules);
+	}
+
+	public function usergroup_update($UserGroup, $PostData)
+	{
+		if (isset($PostData['PluginFramework']['DeliveryLimit']) == true)
+		{
+			$UserGroupSettings = Database::$Interface->GetOption('PluginFramework_UserGroupSettings');
+			$UserGroupSettings = json_decode($UserGroupSettings[0]['OptionValue'], true);
+
+			$UserGroupSettings[$UserGroup['UserGroupID']]['DeliveryLimit'] = $PostData['PluginFramework']['DeliveryLimit'];
+
+			Database::$Interface->SaveOption('PluginFramework_UserGroupSettings', json_encode($UserGroupSettings));
+		}
+	}
+
+	public function usergroup_delete($UserGroup)
+	{
+		$UserGroupSettings = Database::$Interface->GetOption('PluginFramework_UserGroupSettings');
+		$UserGroupSettings = json_decode($UserGroupSettings[0]['OptionValue'], true);
+
+		if (isset($UserGroupSettings[$UserGroup['UserGroupID']]) == true)
+		{
+			unset($UserGroupSettings[$UserGroup['UserGroupID']]);
+		}
+
+		Database::$Interface->SaveOption('PluginFramework_UserGroupSettings', json_encode($UserGroupSettings));
+	}
+
+	public function user_delete()
+	{
+		$SelectedUserIDs = func_get_args();
+
+		if (is_array($SelectedUserIDs) == true && count($SelectedUserIDs) > 0)
+		{
+			foreach ($SelectedUserIDs as $EachUserID)
+			{
+				self::$Models->messages->DeleteUserRecords($EachUserID);
+			}
+		}
 	}
 
 
@@ -249,11 +313,11 @@ class plugin_framework extends Plugins
 
 		// Or if you want this controller to be accessible by a logged in administrator, enable
 		// this code:
-		// if (self::_PluginAppHeader('Admin') == false) return;
+		if (self::_PluginAppHeader('Admin') == false) return;
 
 		// Or if you don't want any admin/user authentication check, simply enable the following
 		// code:
-		if (self::_PluginAppHeader(null) == false) return;
+		// if (self::_PluginAppHeader(null) == false) return;
 
 
 		// You can reach CodeIgniter's all features just like the example displayed below:
@@ -311,9 +375,46 @@ class plugin_framework extends Plugins
 
 		// Load the view file
 		self::$ObjectCI->plugin_render(self::$PluginCode, 'example_view', $ArrayViewData, true);
-
-
 	}
+
+	public function ui_admin_settings($SelectedTab = 'settings')
+	{
+		if (self::_PluginAppHeader('Admin') == false) return;
+
+		Core::LoadObject('api');
+
+		$PageErrorMessage = '';
+		$PageSuccessMessage = '';
+
+		$ArrayViewData = array(
+			'PageTitle' => ApplicationHeader::$ArrayLanguageStrings['PageTitle']['AdminPrefix'] . self::$ArrayLanguage['Screen']['0002'],
+			'CurrentMenuItem' => 'Settings',
+			'PluginView' => '../plugins/plugin_framework/templates/admin_settings.php',
+			'SubSection' => 'Plugin Framework',
+			'PluginLanguage' => self::$ArrayLanguage,
+			'PageErrorMessage' => $PageErrorMessage,
+			'PageSuccessMessage' => $PageSuccessMessage,
+		);
+		$ArrayViewData = array_merge($ArrayViewData, InterfaceDefaultValues());
+
+		self::$ObjectCI->render('admin/settings', $ArrayViewData);
+	}
+
+	public function ui_admin_reports()
+	{
+		if (self::_PluginAppHeader('Admin') == false) return;
+
+		$ArrayViewData = array(
+			'PageTitle' => ApplicationHeader::$ArrayLanguageStrings['PageTitle']['AdminPrefix'] . self::$ArrayLanguage['Screen']['0005'],
+			'CurrentMenuItem' => 'Drop',
+			'CurrentDropMenuItem' => self::$ArrayLanguage['Screen']['0001'],
+			'PluginLanguage' => self::$ArrayLanguage,
+		);
+		$ArrayViewData = array_merge($ArrayViewData, InterfaceDefaultValues());
+
+		self::$ObjectCI->plugin_render(self::$PluginCode, 'admin_reports', $ArrayViewData, true);
+	}
+
 
 
 	// -------------------------------------
@@ -322,7 +423,7 @@ class plugin_framework extends Plugins
 
 	private function _EventSaveSettings()
 	{
-		return;
+		return array(false, self::$ArrayLanguage['Screen']['0004']);
 	}
 
 	// -------------------------------------
@@ -366,7 +467,7 @@ class plugin_framework extends Plugins
 
 		AdminAuth::IsLoggedIn(false, InterfaceAppURL(true) . '/admin/');
 
-		self::$AdminInformation = Admins::RetrieveAdmin(array('*'), array('CONCAT(MD5(AdminID), MD5(Username), MD5(Password))'=>$_SESSION[SESSION_NAME]['AdminLogin']));
+		self::$AdminInformation = Admins::RetrieveAdmin(array('*'), array('CONCAT(MD5(AdminID), MD5(Username), MD5(Password))' => $_SESSION[SESSION_NAME]['AdminLogin']));
 
 		return;
 	}
@@ -404,11 +505,11 @@ class plugin_framework extends Plugins
 		{
 			foreach (self::$LoadedModels as $EachModel)
 			{
-				if (file_exists(PLUGIN_PATH.self::$PluginCode.'/models/'.$EachModel.'.php') == false) continue;
+				if (file_exists(PLUGIN_PATH . self::$PluginCode . '/models/' . $EachModel . '.php') == false) continue;
 				if (isset($InitiatedModels[$EachModel]) == true) continue;
 
-				include_once('models/'.$EachModel.'.php');
-				$ClassName = 'model_'.$EachModel;
+				include_once('models/' . $EachModel . '.php');
+				$ClassName = 'model_' . $EachModel;
 				self::$Models->{$EachModel} = new $ClassName();
 				self::$Models->{$EachModel}->Models = self::$Models;
 
